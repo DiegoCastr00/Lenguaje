@@ -1,7 +1,6 @@
 
-!pip install tensorflow
-
-!pip install keras
+#pip install tensorflow
+#pip install keras
 
 
 from pandas import read_csv
@@ -13,7 +12,7 @@ from sklearn.metrics import mean_squared_error
 import math
 import matplotlib.pyplot as plt
 
-INPUT_FILE = '/content/drive/MyDrive/IPN_2023_Otoño_Presentaciones/NLP/Practicas 2,3/wonderland.txt'
+INPUT_FILE = '...//wonderland.txt'
 
 # extraer la entrada como un flujo de caracteres
 print("Extraer texto de los datos de entrada...")
