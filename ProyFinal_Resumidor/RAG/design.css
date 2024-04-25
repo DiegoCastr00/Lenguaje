@@ -1,0 +1,105 @@
+    /* Agregar Poppins */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+    * {
+        font-family: "Poppins", sans-serif !important;
+    }
+
+    header {
+        background-color: #0F0F11 !important;
+    }
+    
+    /* Nombre de la app */
+    .app-name {
+        display: flex;
+        align-items: center;
+    }
+
+    .app-name-title {
+        padding-left: 20px;
+    }
+
+    /* Boton de browse files */
+    .st-emotion-cache-hc3laj {
+        border: none !important;
+        background-color: #5753D5 !important;
+        color: white !important;
+        width: 16em;
+    }
+
+    .st-emotion-cache-hc3laj:hover {
+        border: none !important;
+        background-color: #7D7BDF !important;
+        color: white !important;
+    }
+
+    /* Sidebar */
+    .st-emotion-cache-6qob1r {
+        background-color: #0F0F11 !important;
+    }
+
+    /* Principal */
+    .st-emotion-cache-uf99v8 {
+        background-color: #171713 !important;
+    }
+
+    .st-emotion-cache-uf99v8 input {
+        background-color: #1F1D22 !important;
+        cursor: text !important;
+    }
+
+    .st-emotion-cache-uf99v8 input:focus {
+        border: #5753D5 !important;
+        outline-color: #5753D5 !important;
+        outline-style: solid !important;
+        outline-width: 2px !important;
+    }
+
+    .st-emotion-cache-uf99v8 input:hover {
+        border: #5753D5 !important;
+    }
+
+    .st-emotion-cache-uf99v8 {
+        background-color: #1F1D22 !important;
+        /*margin: 0 15px 0 15px !important;*/
+        padding: 0 15px 0 15px !important;
+    }
+
+    /* Boton de opciones de modelo*/
+    .st-am:hover {
+        cursor: pointer !important;
+    }
+
+    .stSelectbox div:focus .stSelectbox div:hover {
+        border: #5753D5 !important;
+        outline-color: #5753D5 !important;
+        outline-style: solid !important;
+        outline-width: 2px !important;
+    }
+    
+    .message {
+        padding: 10px;
+        border-radius: 10px;
+        font-size: 0.8em;
+    }
+    
+    .user {
+        margin-left: 15px;
+        background-color: #5753D5;
+        color: white;
+        text-align: right;
+    }
+    
+    .model {
+        margin-left: 15px;
+        background-color: #1F1D22;
+        color: white;
+        text-align: left;
+    }
+    
+    .response-input {
+        margin-left: 15px;
+        height: 30px;
+        width: 30px;
+        background-color: #FFFFFF;
+    }
