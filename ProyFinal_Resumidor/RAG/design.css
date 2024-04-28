@@ -48,15 +48,15 @@
         cursor: text !important;
     }
 
-    .st-emotion-cache-uf99v8 input:focus {
+    .st-emotion-cache-uf99v8 input:focus, input:hover, input::after{
         border: #5753D5 !important;
         outline-color: #5753D5 !important;
         outline-style: solid !important;
         outline-width: 2px !important;
     }
 
-    .st-emotion-cache-uf99v8 input:hover {
-        border: #5753D5 !important;
+    .st-e1, .st-e0, .st-dz, .st-dy, .st-cs, .st-cr, .st-cq, .st-d1, .st-d2, .st-d3, .st-d4 {
+        border-color: #5753D5 !important;
     }
 
     .st-emotion-cache-uf99v8 {
@@ -76,6 +76,8 @@
         outline-style: solid !important;
         outline-width: 2px !important;
     }
+
+    /* Mensajes del usuario y del modelo */
     
     .message {
         padding: 10px;
@@ -84,17 +86,25 @@
     }
     
     .user {
-        margin-left: 15px;
-        background-color: #5753D5;
-        color: white;
-        text-align: right;
+        margin-left: 15px !important;
+        background-color: #5753D5 !important;
+        color: white !important;
+        text-align: left !important;
+    }
+
+    .response {
+        display: flex;
+        margin-bottom: 15px;
     }
     
     .model {
-        margin-left: 15px;
-        background-color: #1F1D22;
-        color: white;
-        text-align: left;
+        margin-left: 15px !important;
+        background-color: #171713 !important;
+        color: white !important;
+        text-align: left !important;
+        max-width: 90%;
+        display: flex;
+        word-break: break-all;
     }
     
     .response-input {
@@ -102,4 +112,102 @@
         height: 30px;
         width: 30px;
         background-color: #FFFFFF;
+        border-radius: 20%;
+    }
+
+    /* Animacion de la llama */
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {
+          transform: translateY(0);
+        }
+        40% {
+          transform: translateY(-20px);
+        }
+        60% {
+          transform: translateY(-10px);
+        }
+    }
+      
+    .bounce-image {
+        animation: bounce 4s infinite;
+        max-height: 30em;
+    }
+      
+    .st-emotion-cache-cnbvxy .llama-icon {
+        align-items: center;
+        justify-content: center;
+        display: flex;
+    }
+
+    /* Boton de enviar */
+    .stForm {
+        display: flex;
+        flex-direction: column !important;
+    }
+
+    .st-emotion-cache-1xw8zd0 {
+        border: none !important;
+    }
+
+    .st-emotion-cache-uaf2yl, .st-emotion-cache-1xgqg4g, .st-emotion-cache-1ws1sb4 {
+        flex-direction: column !important;
+    }
+
+    .st-emotion-cache-19rxjzo{
+        transform: translate(-90px, 30px) !important;
+    }
+
+    .st-emotion-cache-19rxjzo p{
+        font-size: 0.8em !important;
+    }
+
+    .st-emotion-cache-19rxjzo:hover {
+        border-color: #5753D5 !important;
+        color: #5753D5 !important;
+        border-color: none;
+    }
+
+    .st-emotion-cache-19rxjzo:focus:not(:active), .st-emotion-cache-19rxjzo:focus {
+        background-color: #5753D5 !important;
+        color: #FFFFFF !important;
+        border-color: none;
+    }
+
+    .st-emotion-cache-19rxjzo:focus:not(:active) {
+        border-color: #5753D5;
+    }
+
+    /* Row de input de texto */
+    .st-emotion-cache-uaf2yl, .st-emotion-cache-1xgqg4g, .st-emotion-cache-1ws1sb4 {
+        flex-direction: row !important;
+    }
+
+    .st-emotion-cache-1katfdw {
+        flex-direction: row !important;
+    }
+
+    /* Efecto de typing */
+    .typewriter {
+        overflow: hidden;
+        white-space: nowrap;
+        margin: 0 auto;
+        animation: 
+          typing 3.5s steps(40, end),
+          blink-caret .75s step-end infinite;
+        max-width: 60em;
+        align-items: start;
+        text-align: left;
+    }
+      
+    /* The typing effect */
+    @keyframes typing {
+        from { width: 0 }
+        to { width: 100% }
+    }
+      
+    /* The typewriter cursor effect */
+    @keyframes blink-caret {
+        from { border-color: #5753D5;}
+        to { border-color: transparent;}
     }
