@@ -10,6 +10,7 @@ from langchain_community.vectorstores import FAISS
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
 
+from imagenes_base64 import pdf_icon, llama_icon, iconouser, iconollama
 
 os.environ["TOGETHER_API_KEY"] = "f8935229473a0d8a3f4709a9ef32533fe365c0cb215ba8c41413b5ca53a5c767"
 class TogetherLLM(LLM):
@@ -43,14 +44,17 @@ import googletrans
 translator = Translator()
 
 def traducir(texto_original):
-    origen = translator.detect(texto_original).lang
-    # Si el texto esta en otro idioma que no sea ingles lo traduce
-    if origen != "en":
-        #print(f'Traduccion de {origen} a en')
-        traduccion = translator.translate(texto_original, dest="en", src=origen).text
-        return traduccion
-    # En caso contrario devuelve el texto original ya que esta en ingles
-    else:
+    try :
+        origen = translator.detect(texto_original).lang
+        # Si el texto esta en otro idioma que no sea ingles lo traduce
+        if origen != "en":
+            #print(f'Traduccion de {origen} a en')
+            traduccion = translator.translate(texto_original, dest="en", src=origen).text
+            return traduccion
+        # En caso contrario devuelve el texto original ya que esta en ingles
+        else:
+            return texto_original
+    except:
         return texto_original
     
 # Funcion para traduccion a otro idioma
@@ -184,31 +188,39 @@ def display_chat_history(chain):
     if st.session_state['generated']:
         with reply_container:
             for i in range(len(st.session_state['generated'])):
-                st.markdown(f'<div class="response"><div class="response-input"></div><div class="message user">{st.session_state["past"][i]}</div><div>', unsafe_allow_html=True)
+                
+                response_user = st.session_state["past"][i]
+                st.markdown("""
+                            <div class="response">
+                                <div class="response-input">
+                                    <img src='data:image/png;base64,{iconouser}' alt='Icono' width='40em' height='40em' style='vertical-align: middle;'> 
+                                </div>
+                                <div class="message user">{respuesta}</div>
+                            <div>""".format(iconouser=iconouser,respuesta=response_user), unsafe_allow_html=True)
+                
+                respuesta = st.session_state["generated"][i]
 
-                st.markdown(f'<div class="response"><div class="response-input"></div><div class="message model"><span class="typewriter">{st.session_state["generated"][i]}</span></div></div>', unsafe_allow_html=True)
+                st.markdown(
+                    """
+                        <div class="response">
+                            <div class="response-input">
+                                <img src='data:image/png;base64,{iconollama}' alt='Icono' width='40em' height='40em' style='vertical-align: middle;'> 
+                            </div>
+                            <div class="message model">
+                                <span class="typewriter">{respuesta}</span>
+                            </div>
+                        </div>""".format(iconollama=iconollama,respuesta=respuesta),unsafe_allow_html=True)
+                
+                
                 #st.markdown(f'<div class="response"><div class="response-input"></div><div class="message model">{st.session_state['generated'][i]}</div></div>', unsafe_allow_html=True)
 
-# Clase para historial de conversacion
-class ChatHistory:
-    def __init__(self):
-        self.history = []
-
-    def add_message(self, user_message, llm_response):
-        self.history.append({"user": user_message, "llm_response": llm_response})
-
-    def get_history(self):
-        return self.history
-
-
-asd = "7B"
 st.set_page_config('preguntaDOC')
-st.header(f"Pregunta a LLama {asd} 🦙")
 
 with open("design.css") as source_des:
     st.markdown(f"<style>{source_des.read()}</style>", unsafe_allow_html=True)
 
-from imagenes_base64 import pdf_icon
+
+
 
 st.sidebar.markdown(
     """
@@ -223,11 +235,6 @@ st.sidebar.markdown(
 
 pdf_obj = st.sidebar.file_uploader("Carga tu documento", type="pdf", on_change=st.cache_resource.clear)
 
-model_option = st.sidebar.selectbox(
-    "Selecciona el modelo:",
-    ["Llama 8 B", "Llama 13 B", "Llama 80 B", "Open AI"]
-)
-
 
 #st.text("Haz una pregunta sobre tu PDF:")
 # Si no hay un chat todavia muestra una animacion
@@ -239,17 +246,35 @@ if not pdf_obj:
             </div>
     """.format(llama_icon=llama_icon), unsafe_allow_html=True)
 
-chat_history = ChatHistory()
+model_option = st.sidebar.selectbox(
+    "Selecciona el modelo:",
+    ["Llama 7 B", "Llama 13 B", "Llama 70 B"]
+)
+
 
 if pdf_obj:
     initialize_session_state()
     knowledge_base = create_embeddings(pdf_obj)
     retriever = knowledge_base.as_retriever(search_kwargs={"k": 5})
-    # create the chain to answer questions
-    modelo = "togethercomputer/llama-2-7b-chat"
+
+    if model_option == "Llama 7 B":
+        modelo = "togethercomputer/llama-2-7b-chat"
+        asd = "7 B"
+        st.header(f"Pregunta a LLama {asd} 🦙")
+         
+    elif model_option == "Llama 13 B":
+        modelo = "togethercomputer/llama-2-13b-chat"
+        asd = "13 B"
+        st.header(f"Pregunta a LLama {asd} 🦙")
+    elif model_option == "Llama 70 B":
+        modelo = "togethercomputer/llama-2-70b-chat"
+        asd = "70 B"
+        st.header(f"Pregunta a LLama {asd} 🦙")
+    
     llm = modelo_llm(modelo)
     qa_chain = RetrievalQA.from_chain_type(llm=llm,
                                         chain_type="stuff",
                                         retriever=retriever,
                                         chain_type_kwargs=chain_type_kwargs)
     display_chat_history(qa_chain)
+

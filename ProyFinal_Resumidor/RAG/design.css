@@ -88,7 +88,7 @@
     }
     
     .user {
-        margin-left: 15px !important;
+        margin-left:30px !important;
         background-color: #5753D5 !important;
         color: white !important;
         text-align: left !important;
@@ -96,11 +96,11 @@
 
     .response {
         display: flex;
-        margin-bottom: 15px;
+        margin-bottom: 30px;
     }
     
     .model {
-        margin-left: 15px !important;
+        margin-left: 30px !important;
         background-color: #171713 !important;
         color: white !important;
         text-align: left !important;
@@ -112,7 +112,6 @@
         margin-left: 15px;
         height: 30px;
         width: 30px;
-        background-color: #FFFFFF;
         border-radius: 20%;
     }
 
@@ -193,14 +192,18 @@
     .typewriter {
         overflow: hidden;
         margin: 0 auto;
-        animation: 
-          typing 3.5s steps(40, end),
-          blink-caret .75s step-end infinite;
         max-width: 60em;
         align-items: start;
         text-align: left;
+        font-size: 1rem !important;
     }
-      
+    .typewriter p, ol, ul, dl {
+        margin: 0px 0px 1rem !important;
+        padding: 0px !important;
+        font-size: 1rem !important;
+        font-weight: 400 !important;
+    }
+
     /* The typing effect */
     @keyframes typing {
         from { width: 0 }
