@@ -41,6 +41,8 @@
     /* Principal */
     .st-emotion-cache-uf99v8 {
         background-color: #171713 !important;
+        overflow-y: auto !important;
+        overflow-x: inherit !important;
     }
 
     .st-emotion-cache-uf99v8 input {
@@ -104,7 +106,6 @@
         text-align: left !important;
         max-width: 90%;
         display: flex;
-        word-break: break-all;
     }
     
     .response-input {
@@ -152,6 +153,7 @@
 
     .st-emotion-cache-uaf2yl, .st-emotion-cache-1xgqg4g, .st-emotion-cache-1ws1sb4 {
         flex-direction: column !important;
+        
     }
 
     .st-emotion-cache-19rxjzo{
@@ -190,7 +192,6 @@
     /* Efecto de typing */
     .typewriter {
         overflow: hidden;
-        white-space: nowrap;
         margin: 0 auto;
         animation: 
           typing 3.5s steps(40, end),
