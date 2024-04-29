@@ -9,6 +9,7 @@ from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings 
 from langchain.vectorstores import FAISS
+import uuid
 
 st.set_page_config('preguntaDOC')
 st.header("Pregunta a LLaMA 🦙")
@@ -66,8 +67,74 @@ class TogetherLLM(LLM):
             return text
         else:
             raise KeyError("The key 'choices' is not in the response.")
+        
+with open("design.css") as source_des:
+    st.markdown(f"<style>{source_des.read()}</style>", unsafe_allow_html=True)
 
-pdf_obj = st.file_uploader("Carga tu documento", type="pdf", on_change=st.cache_resource.clear)
+from imagenes_base64 import pdf_icon
+
+st.sidebar.markdown(
+    """
+
+    <div class="app-name">
+        <img src='data:image/png;base64,{pdf_icon}' alt='Icono' width='40em' height='40em' style='vertical-align: middle;'> 
+        <h1 style='color: #FFFFFF;' class="app-name-title">PDF Chatify</h1>
+    </div>
+    """.format(pdf_icon=pdf_icon),
+    unsafe_allow_html=True
+)
+
+pdf_obj = st.sidebar.file_uploader("Carga tu documento", type="pdf", on_change=st.cache_resource.clear)
+
+model_option = st.sidebar.selectbox(
+    "Selecciona el modelo:",
+    ["Llama 7B", "Llama 80B","Open AI"]
+)
+
+# Funcion para traduccion a ingles
+from googletrans import Translator
+translator = Translator()
+
+def traducir(texto_original):
+    origen = translator.detect(texto_original).lang
+    # Si el texto esta en otro idioma que no sea ingles lo traduce
+    if origen != "en":
+        #print(f'Traduccion de {origen} a en')
+        traduccion = translator.translate(texto_original, dest="en", src=origen).text
+        return traduccion
+    # En caso contrario devuelve el texto original ya que esta en ingles
+    else:
+        return texto_original
+    
+# Funcion para traduccion a otro idioma
+import googletrans
+def traducir_ingles(texto_ingles, idioma_destino):
+    for abreviatura, nombre_idioma in googletrans.LANGUAGES.items():
+        if nombre_idioma == idioma_destino:
+            destino = abreviatura
+    traduccion = translator.translate(texto_ingles, dest=destino, src="en").text
+    return traduccion
+
+def dividir_texto(texto, max_caracteres):
+    textos_divididos = []
+    texto_actual = ''
+    caracteres_actuales = 0
+
+    oraciones = texto.split('.')
+
+    for oracion in oraciones:
+        caracteres_actuales += len(oracion) + 1
+
+        if caracteres_actuales <= max_caracteres:
+            texto_actual += oracion + '.'
+        else:
+            textos_divididos.append(texto_actual.strip())
+            texto_actual = oracion + '.'
+            caracteres_actuales = len(oracion) + 1
+
+    textos_divididos.append(texto_actual.strip())
+
+    return textos_divididos
 
 @st.cache_resource 
 def create_embeddings(pdf):
@@ -75,6 +142,13 @@ def create_embeddings(pdf):
     text = ""
     for page in pdf_reader.pages:
         text += page.extract_text()
+
+    # Traducir text a ingles
+    max_caracteres = 14000
+    textos_divididos = dividir_texto(text, max_caracteres)
+    text = ""
+    for textSec in textos_divididos:
+        text += textSec
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
@@ -147,7 +221,84 @@ def wrap_text_preserve_newlines(text, width=110):
 def process_llm_response(llm_response):
     return wrap_text_preserve_newlines(llm_response['result'])
 
+
+# Funcion para el historial de chat
+def initialize_session_state():
+    if 'history' not in st.session_state:
+        st.session_state['history'] = []
+
+    if 'generated' not in st.session_state:
+        #st.session_state['generated'] = ["Hola 👋"]
+        st.session_state['generated'] = []
+
+    if 'past' not in st.session_state:
+        #st.session_state['past'] = ["Hola 👋"]
+        st.session_state['past'] = []
+
+def conversation_chat(query,chain,history):
+    #result =chain({"question":query, "chat_history": history})
+    user_question_eng = traducir(query)
+    llm_response = chain(user_question_eng)
+    llm_response = traducir_ingles(llm_response['result'], "spanish")
+    history.append((query,llm_response))
+    return llm_response
+
+# Simulacion de escritura de cada respuesta
+import time
+def animate_typing(text):
+    for char in text:
+        st.write(char, end='', flush=True)
+        time.sleep(0.05)
+
+import threading
+def display_chat_history(chain):
+    reply_container = st.container()
+    container = st.container()
+
+    with container:
+        with st.form(key='my-form', clear_on_submit=True):
+            user_question = st.text_input("",placeholder="Haz una pregunta a tu PDF",key='my-input')
+            submit_button = st.form_submit_button(label='Enivar')
+
+        if user_question and submit_button:
+            with st.spinner('Generando repuesta...'):
+                output = conversation_chat(user_question, chain, st.session_state['history'])
+            
+            st.session_state['past'].append(user_question)
+            st.session_state['generated'].append(output)
+    
+    if st.session_state['generated']:
+        with reply_container:
+            for i in range(len(st.session_state['generated'])):
+                st.markdown(f'<div class="response"><div class="response-input"></div><div class="message user">{st.session_state['past'][i]}</div><div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="response"><div class="response-input"></div><div class="message model"><span class="typewriter">{st.session_state['generated'][i]}</span></div></div>', unsafe_allow_html=True)
+                #st.markdown(f'<div class="response"><div class="response-input"></div><div class="message model">{st.session_state['generated'][i]}</div></div>', unsafe_allow_html=True)
+
+#st.text("Haz una pregunta sobre tu PDF:")
+# Si no hay un chat todavia muestra una animacion
+if not pdf_obj:
+    from imagenes_base64 import llama_icon
+    st.markdown("""
+            <div class="llama-icon">
+                <img src='data:image/png;base64,{llama_icon}' alt='IconoLlama' style='vertical-align: middle;' class='bounce-image'>
+            </div>
+    """.format(llama_icon=llama_icon), unsafe_allow_html=True)
+
+# Clase para historial de conversacion
+class ChatHistory:
+    def __init__(self):
+        self.history = []
+
+    def add_message(self, user_message, llm_response):
+        self.history.append({"user": user_message, "llm_response": llm_response})
+
+    def get_history(self):
+        return self.history
+
+chat_history = ChatHistory()
+
 if pdf_obj:
+    initialize_session_state()
     knowledge_base = create_embeddings(pdf_obj)
     retriever = knowledge_base.as_retriever(search_kwargs={"k": 5})
     # create the chain to answer questions
@@ -157,8 +308,4 @@ if pdf_obj:
                                         chain_type_kwargs=chain_type_kwargs,
                                         return_source_documents=True)
     
-    user_question = st.text_input("Haz una pregunta sobre tu PDF:")
-    
-    if user_question:
-        llm_response = qa_chain(user_question)
-        st.write(process_llm_response(llm_response))    
+    display_chat_history(qa_chain)
