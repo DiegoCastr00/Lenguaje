@@ -118,7 +118,8 @@ def get_prompt(instruction, new_system_prompt ):
 B_INST, E_INST = "[INST]", "[/INST]"
 B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
-sys_prompt = """You are a helpful, respectful and honest assistant. Always answer as helpfully as possible using the context text provided. Your answers should only answer the question once and not have any text after the answer is done.
+sys_prompt = """You are a helpful, respectful and honest helper. 
+Always answer in the most helpful way possible using the contextual text provided, do not add information which is not in that context. Your answers should only answer the question once and should not contain any text after the answer.
 
 If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information. 
 
@@ -255,7 +256,7 @@ model_option = st.sidebar.selectbox(
 if pdf_obj:
     initialize_session_state()
     knowledge_base = create_embeddings(pdf_obj)
-    retriever = knowledge_base.as_retriever(search_kwargs={"k": 5})
+    retriever = knowledge_base.as_retriever(search_kwargs={"k": 3})
 
     if model_option == "Llama 7 B":
         modelo = "togethercomputer/llama-2-7b-chat"

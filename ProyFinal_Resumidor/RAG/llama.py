@@ -1,113 +1,63 @@
 import streamlit as st
 import together
-from typing import Any, Dict
-from pydantic import Extra
+from typing import Any
 from langchain.llms.base import LLM
-from langchain.utils import get_from_dict_or_env
 import os
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-import uuid
+from langchain.prompts import PromptTemplate
+from langchain.chains import RetrievalQA
 
-st.set_page_config('preguntaDOC')
-st.header("Pregunta a LLaMA 🦙")
+from imagenes_base64 import pdf_icon, llama_icon, iconouser, iconollama
 
 os.environ["TOGETHER_API_KEY"] = "f8935229473a0d8a3f4709a9ef32533fe365c0cb215ba8c41413b5ca53a5c767"
-
-together.api_key = os.environ["TOGETHER_API_KEY"]
-
 class TogetherLLM(LLM):
-    """Together large language models."""
-
-    model: str = "togethercomputer/llama-2-70b-chat"
-    """model endpoint to use"""
-
+    model: str = "togethercomputer/llama-2-7b-chat"
     together_api_key: str = os.environ["TOGETHER_API_KEY"]
-    """Together API key"""
-
-    temperature: float = 0.7
-    """What sampling temperature to use."""
-
-    max_tokens: int = 512
-    """The maximum number of tokens to generate in the completion."""
+    temperature: float = 0.1
+    max_tokens: int = 1024
 
     class Config:
-        extra = Extra.forbid
-
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that the API key is set."""
-        api_key = get_from_dict_or_env(
-            values, "together_api_key", "TOGETHER_API_KEY"
-        )
-        values["together_api_key"] = api_key
-        return values
-
+        extra = 'forbid'
     @property
     def _llm_type(self) -> str:
-        """Return type of LLM."""
         return "together"
-
-    def _call(
-        self,
-        prompt: str,
-        **kwargs: Any,
-    ) -> str:
-        """Call to Together endpoint."""
+    def _call(self, prompt: str, **kwargs: Any) -> str:
+        if not self.together_api_key:
+            raise ValueError("API key is not set.")
         together.api_key = self.together_api_key
         output = together.Complete.create(prompt,
-                                        model=self.model,
-                                        max_tokens=self.max_tokens,
-                                        temperature=self.temperature,
-                                        )
-        # print("Output:", output)  # print the entire output
+                                          model=self.model,
+                                          max_tokens=self.max_tokens,
+                                          temperature=self.temperature)
+        print(f"modelo: {self.model}")
         if 'choices' in output:
-            text = output['choices'][0]['text']
-            return text
+            return output['choices'][0]['text']
         else:
             raise KeyError("The key 'choices' is not in the response.")
         
-with open("design.css") as source_des:
-    st.markdown(f"<style>{source_des.read()}</style>", unsafe_allow_html=True)
-
-from imagenes_base64 import pdf_icon
-
-st.sidebar.markdown(
-    """
-
-    <div class="app-name">
-        <img src='data:image/png;base64,{pdf_icon}' alt='Icono' width='40em' height='40em' style='vertical-align: middle;'> 
-        <h1 style='color: #FFFFFF;' class="app-name-title">PDF Chatify</h1>
-    </div>
-    """.format(pdf_icon=pdf_icon),
-    unsafe_allow_html=True
-)
-
-pdf_obj = st.sidebar.file_uploader("Carga tu documento", type="pdf", on_change=st.cache_resource.clear)
-
-model_option = st.sidebar.selectbox(
-    "Selecciona el modelo:",
-    ["Llama 7B", "Llama 80B","Open AI"]
-)
-
-# Funcion para traduccion a ingles
+  # Funcion para traduccion a ingles
 from googletrans import Translator
+import googletrans
 translator = Translator()
 
 def traducir(texto_original):
-    origen = translator.detect(texto_original).lang
-    # Si el texto esta en otro idioma que no sea ingles lo traduce
-    if origen != "en":
-        #print(f'Traduccion de {origen} a en')
-        traduccion = translator.translate(texto_original, dest="en", src=origen).text
-        return traduccion
-    # En caso contrario devuelve el texto original ya que esta en ingles
-    else:
+    try :
+        origen = translator.detect(texto_original).lang
+        # Si el texto esta en otro idioma que no sea ingles lo traduce
+        if origen != "en":
+            #print(f'Traduccion de {origen} a en')
+            traduccion = translator.translate(texto_original, dest="en", src=origen).text
+            return traduccion
+        # En caso contrario devuelve el texto original ya que esta en ingles
+        else:
+            return texto_original
+    except:
         return texto_original
     
 # Funcion para traduccion a otro idioma
-import googletrans
 def traducir_ingles(texto_ingles, idioma_destino):
     for abreviatura, nombre_idioma in googletrans.LANGUAGES.items():
         if nombre_idioma == idioma_destino:
@@ -142,7 +92,6 @@ def create_embeddings(pdf):
     text = ""
     for page in pdf_reader.pages:
         text += page.extract_text()
-
     # Traducir text a ingles
     max_caracteres = 14000
     textos_divididos = dividir_texto(text, max_caracteres)
@@ -156,29 +105,21 @@ def create_embeddings(pdf):
         length_function=len
         )        
     chunks = text_splitter.split_text(text)
-
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
     knowledge_base = FAISS.from_texts(chunks, embeddings)
-    print("Knowledge base created")
     return knowledge_base
 
-from langchain.prompts import PromptTemplate
-from langchain.chains import RetrievalQA
 
-## Default LLaMA-2 prompt style
-B_INST, E_INST = "[INST]", "[/INST]"
-B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
-DEFAULT_SYSTEM_PROMPT = """\
-You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
-
-If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information."""
-
-def get_prompt(instruction, new_system_prompt=DEFAULT_SYSTEM_PROMPT ):
+def get_prompt(instruction, new_system_prompt ):
     SYSTEM_PROMPT = B_SYS + new_system_prompt + E_SYS
     prompt_template =  B_INST + SYSTEM_PROMPT + instruction + E_INST
     return prompt_template
 
-sys_prompt = """You are a helpful, respectful and honest assistant. Always answer as helpfully as possible using the context text provided. Your answers should only answer the question once and not have any text after the answer is done.
+B_INST, E_INST = "[INST]", "[/INST]"
+B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
+
+sys_prompt = """You are a helpful, respectful and honest helper. 
+Always answer in the most helpful way possible using the contextual text provided, do not add information which is not in that context. Your answers should only answer the question once and should not contain any text after the answer.
 
 If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information. 
 
@@ -190,37 +131,16 @@ instruction = """CONTEXT:/n/n {context}/n
 
 Question: {question}"""
 
-
-get_prompt(instruction, sys_prompt)
-
-llm = TogetherLLM(
-    model= "togethercomputer/llama-2-7b-chat",
-    temperature = 0.1,
-    max_tokens = 1024
-)
-
 prompt_template = get_prompt(instruction, sys_prompt)
-
 llama_prompt = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]
 )
-
 chain_type_kwargs = {"prompt": llama_prompt}
 
-import textwrap
-
-def wrap_text_preserve_newlines(text, width=110):
-    # Split the input text into lines based on newline characters
-    lines = text.split('\n')
-    # Wrap each line individually
-    wrapped_lines = [textwrap.fill(line, width=width) for line in lines]
-    # Join the wrapped lines back together using newline characters
-    wrapped_text = '\n'.join(wrapped_lines)
-    return wrapped_text
-
-def process_llm_response(llm_response):
-    return wrap_text_preserve_newlines(llm_response['result'])
-
+def modelo_llm(modelo):
+    return TogetherLLM(
+        model= modelo,
+    )
 
 # Funcion para el historial de chat
 def initialize_session_state():
@@ -238,7 +158,7 @@ def initialize_session_state():
 def conversation_chat(query,chain,history):
     #result =chain({"question":query, "chat_history": history})
     user_question_eng = traducir(query)
-    llm_response = chain(user_question_eng)
+    llm_response = chain.invoke(user_question_eng)
     llm_response = traducir_ingles(llm_response['result'], "spanish")
     history.append((query,llm_response))
     return llm_response
@@ -250,7 +170,6 @@ def animate_typing(text):
         st.write(char, end='', flush=True)
         time.sleep(0.05)
 
-import threading
 def display_chat_history(chain):
     reply_container = st.container()
     container = st.container()
@@ -270,10 +189,53 @@ def display_chat_history(chain):
     if st.session_state['generated']:
         with reply_container:
             for i in range(len(st.session_state['generated'])):
-                st.markdown(f'<div class="response"><div class="response-input"></div><div class="message user">{st.session_state["past"][i]}</div><div>', unsafe_allow_html=True)
+                
+                response_user = st.session_state["past"][i]
+                st.markdown("""
+                            <div class="response">
+                                <div class="response-input">
+                                    <img src='data:image/png;base64,{iconouser}' alt='Icono' width='40em' height='40em' style='vertical-align: middle;'> 
+                                </div>
+                                <div class="message user">{respuesta}</div>
+                            <div>""".format(iconouser=iconouser,respuesta=response_user), unsafe_allow_html=True)
+                
+                respuesta = st.session_state["generated"][i]
 
-                st.markdown(f'<div class="response"><div class="response-input"></div><div class="message model"><span class="typewriter">{st.session_state["generated"][i]}</span></div></div>', unsafe_allow_html=True)
+                st.markdown(
+                    """
+                        <div class="response">
+                            <div class="response-input">
+                                <img src='data:image/png;base64,{iconollama}' alt='Icono' width='40em' height='40em' style='vertical-align: middle;'> 
+                            </div>
+                            <div class="message model">
+                                <span class="typewriter">{respuesta}</span>
+                            </div>
+                        </div>""".format(iconollama=iconollama,respuesta=respuesta),unsafe_allow_html=True)
+                
+                
                 #st.markdown(f'<div class="response"><div class="response-input"></div><div class="message model">{st.session_state['generated'][i]}</div></div>', unsafe_allow_html=True)
+
+st.set_page_config('preguntaDOC')
+
+with open("design.css") as source_des:
+    st.markdown(f"<style>{source_des.read()}</style>", unsafe_allow_html=True)
+
+
+
+
+st.sidebar.markdown(
+    """
+    <div class="app-name">
+        <img src='data:image/png;base64,{pdf_icon}' alt='Icono' width='40em' height='40em' style='vertical-align: middle;'> 
+        <h1 style='color: #FFFFFF;' class="app-name-title">PDF Chatify</h1>
+    </div>
+    """.format(pdf_icon=pdf_icon),
+    unsafe_allow_html=True
+)
+
+
+pdf_obj = st.sidebar.file_uploader("Carga tu documento", type="pdf", on_change=st.cache_resource.clear)
+
 
 #st.text("Haz una pregunta sobre tu PDF:")
 # Si no hay un chat todavia muestra una animacion
@@ -285,28 +247,35 @@ if not pdf_obj:
             </div>
     """.format(llama_icon=llama_icon), unsafe_allow_html=True)
 
-# Clase para historial de conversacion
-class ChatHistory:
-    def __init__(self):
-        self.history = []
+model_option = st.sidebar.selectbox(
+    "Selecciona el modelo:",
+    ["Llama 7 B", "Llama 13 B", "Llama 70 B"]
+)
 
-    def add_message(self, user_message, llm_response):
-        self.history.append({"user": user_message, "llm_response": llm_response})
-
-    def get_history(self):
-        return self.history
-
-chat_history = ChatHistory()
 
 if pdf_obj:
     initialize_session_state()
     knowledge_base = create_embeddings(pdf_obj)
-    retriever = knowledge_base.as_retriever(search_kwargs={"k": 5})
-    # create the chain to answer questions
+    retriever = knowledge_base.as_retriever(search_kwargs={"k": 3})
+
+    if model_option == "Llama 7 B":
+        modelo = "togethercomputer/llama-2-7b-chat"
+        asd = "7 B"
+        st.header(f"Pregunta a LLama {asd} 🦙")
+         
+    elif model_option == "Llama 13 B":
+        modelo = "togethercomputer/llama-2-13b-chat"
+        asd = "13 B"
+        st.header(f"Pregunta a LLama {asd} 🦙")
+    elif model_option == "Llama 70 B":
+        modelo = "togethercomputer/llama-2-70b-chat"
+        asd = "70 B"
+        st.header(f"Pregunta a LLama {asd} 🦙")
+    
+    llm = modelo_llm(modelo)
     qa_chain = RetrievalQA.from_chain_type(llm=llm,
                                         chain_type="stuff",
                                         retriever=retriever,
-                                        chain_type_kwargs=chain_type_kwargs,
-                                        return_source_documents=True)
-    
+                                        chain_type_kwargs=chain_type_kwargs)
     display_chat_history(qa_chain)
+

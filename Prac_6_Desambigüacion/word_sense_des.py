@@ -21,7 +21,7 @@ nltk.download('wordnet')
 nltk.download('wordnet2022')
 nlp = load('en_core_web_sm')
 
-! cp -rf /usr/share/nltk_data/corpora/wordnet2022 /usr/share/nltk_data/corpora/wordnet # temp fix for lookup error.
+# ! cp -rf /usr/share/nltk_data/corpora/wordnet2022 /usr/share/nltk_data/corpora/wordnet # temp fix for lookup error.
 
 """En el siguiente ejemplo la palabra morir tiene un significado diferente en cada frase.
 Sólo entendiendo el contexto de la palabra la PNL puede improvisar más.

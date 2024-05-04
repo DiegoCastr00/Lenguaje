@@ -7,9 +7,9 @@ Original file is located at
     https://colab.research.google.com/drive/1bYXNNsoPVBljH7rrWMDmn2cd4ARnQCaM
 """
 
-!pip install spacy
+# !pip install spacy
 
-!pip install word2vec
+# !pip install word2vec
 
 # Elementos a utilizar
 import nltk
