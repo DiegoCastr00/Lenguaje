@@ -104,7 +104,7 @@
         background-color: #171713 !important;
         color: white !important;
         text-align: left !important;
-        max-width: 90%;
+        max-width: 70%;
         display: flex;
     }
     
@@ -202,6 +202,32 @@
         padding: 0px !important;
         font-size: 1rem !important;
         font-weight: 400 !important;
+    }
+
+    /* Cambios nuevos */
+    .st-emotion-cache-bm2z3a {
+        align-items: start !important;
+    }
+
+    .st-emotion-cache-1r6slb0 {
+        width: 60% !important;
+        flex: auto !important;
+    }
+
+    .st-emotion-cache-ocqkz7 {
+        flex-wrap: unset !important;
+    }
+
+    .st-emotion-cache-13ln4jf {
+        max-width: 100% !important;
+    }
+
+    .st-emotion-cache-115gedg {
+        height: 80vh !important;
+    }
+
+    .st-emotion-cache-lxfqac {
+        overflow-y: scroll;
     }
 
     /* The typing effect */
